@@ -25,6 +25,24 @@ You need a Linux host with the standard Yocto build dependencies, plus kas.
 Install the exact package names recommended by your distribution and Yocto
 version.
 
+### Using uv
+
+If you want a reproducible Python environment on a fresh host, use the
+committed lock file and let `uv` create the repo-local `.venv` for you:
+
+```bash
+uv sync --locked
+```
+
+After that, the build can be started with:
+
+```bash
+uv run --locked kas build kas/dev.yml
+```
+
+`uv sync --locked` will reuse the existing `.venv` if it is already present,
+or create it automatically on a fresh machine.
+
 ## Build
 
 Build the development configuration with:

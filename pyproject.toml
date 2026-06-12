@@ -1,0 +1,8 @@
+[project]
+name = "drone-os"
+version = "0.1.0"
+description = "Yocto-based Raspberry Pi 5 image for Drone OS"
+requires-python = ">=3.10"
+dependencies = [
+  "kas",
+]

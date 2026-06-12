@@ -1,80 +1,56 @@
-# raspi-drone OS
+# Drone OS
 
-Yocto-based Linux image for the **Raspberry Pi CM5** (BCM2712).
-Built with [BitBake](https://docs.yoctoproject.org/bitbake/) on the **scarthgap** (5.0 LTS) release.
+Drone OS is a Yocto Project based Linux image for the Raspberry Pi 5.
+The build is driven by kas and uses a custom layer, `meta-drone`, to define
+the `drone-os` distro and the `drone-image` root filesystem image.
 
-## What's included
+## Overview
 
-| Package | Source layer |
-|---------|-------------|
-| OpenSSH server | `poky` (`IMAGE_FEATURES`) |
-| `btop` | `meta-openembedded/meta-oe` |
-| `tree` | `meta-openembedded/meta-oe` |
+- Machine: `raspberrypi5`
+- Distro: `drone-os`
+- Image target: `drone-image`
+- Build system: kas + Yocto Project Scarthgap
+
+## Repository Layout
+
+- `kas/base.yml` defines the shared Yocto configuration, repositories, machine,
+	and target.
+- `kas/dev.yml` adds development-only packages and debug settings.
+- `layers/meta-drone/` contains the custom distro, image recipe, and layer
+	metadata.
 
 ## Prerequisites
 
-- Linux host with the [Yocto required packages](https://docs.yoctoproject.org/ref-manual/system-requirements.html#required-packages-for-the-build-host) installed
-- Git ≥ 2.x, Python 3.8+, `diffstat`, `chrpath`, `cpio`, `file`, `gawk`
+You need a Linux host with the standard Yocto build dependencies, plus kas.
+Install the exact package names recommended by your distribution and Yocto
+version.
+
+## Build
+
+Build the development configuration with:
 
 ```bash
-# Ubuntu / Debian example
-sudo apt install gawk wget git diffstat unzip texinfo gcc build-essential \
-     chrpath socat cpio python3 python3-pip python3-pexpect \
-     xz-utils debianutils iputils-ping python3-git python3-jinja2 \
-     python3-subunit zstd liblz4-tool file locales libacl1
+kas build kas/dev.yml
 ```
 
-## Quick start
+The development config enables `debug-tweaks` and installs extra tools such as
+`gdb`, `strace`, `tcpdump`, and `vim`.
 
-```bash
-# 1. Clone this repo and enter the os/ directory
-cd raspi-drone/os
+## Custom Layer
 
-# 2. Run the setup script — clones poky, meta-openembedded, meta-raspberrypi
-#    and initialises the build directory
-bash setup.sh
+The `meta-drone` layer provides:
 
-# 3. Enter the BitBake environment
-source poky/oe-init-build-env build
+- `conf/distro/drone-os.conf` for the custom distro settings
+- `recipes-images/images/drone-image.bb` for the image recipe
+- `recipes-example/` for example recipes
 
-# 4. Build the image (takes 1–3 h on first run)
-bitbake raspi-drone-image
-```
+## Notes
 
-The resulting `.img` file is written to `build/tmp/deploy/images/raspberrypi-cm5/`.
-Flash it with `dd` or [Raspberry Pi Imager](https://www.raspberrypi.com/software/).
+- `kas/base.yml` pins the build to Scarthgap branches for `poky`,
+	`meta-openembedded`, and `meta-raspberrypi`.
+- `meta-drone` is added from the local workspace path, so the layer is built
+	directly from this repository.
 
-## Project structure
+If you want, I can also add a release section, flashing instructions, or a
+shorter contributor-focused README variant.
 
-```
-os/
-├── setup.sh                          # One-shot environment initialiser
-├── conf/
-│   ├── local.conf                    # Machine, parallelism, image settings
-│   └── bblayers.conf                 # Layer stack
-└── meta-raspi-drone/                 # Custom layer
-    ├── conf/layer.conf
-    └── recipes-core/images/
-        └── raspi-drone-image.bb      # Image recipe
-```
-
-Layers cloned by `setup.sh` (not tracked in this repo):
-
-```
-os/
-├── poky/                 # Yocto reference distro (scarthgap)
-├── meta-openembedded/    # OE layer collection (scarthgap)
-└── meta-raspberrypi/     # RPi BSP layer (scarthgap)
-```
-
-> **Note on CM5 machine name:** `raspberrypi-cm5` was added to `meta-raspberrypi`
-> during the scarthgap development cycle. If your checkout does not include it yet,
-> change `MACHINE` in `conf/local.conf` to `raspberrypi5` (same BCM2712 SoC).
-
-## Customisation
-
-- **Add packages:** append to `IMAGE_INSTALL:append` in
-  [meta-raspi-drone/recipes-core/images/raspi-drone-image.bb](meta-raspi-drone/recipes-core/images/raspi-drone-image.bb).
-- **Tune hardware:** edit `ENABLE_UART`, `GPU_MEM`, etc. in
-  [conf/local.conf](conf/local.conf).
-- **Add layers:** list them in [conf/bblayers.conf](conf/bblayers.conf) and clone them before running `setup.sh`.

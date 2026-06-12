@@ -4,15 +4,6 @@
 
 # Yocto build artifacts
 build/
-
-# Yocto submodules (managed via .gitmodules)
-poky/
 meta-openembedded/
 meta-raspberrypi/
-
-# BitBake / Yocto misc
-*.pyc
-__pycache__/
-openembedded/
-meta-raspberrypi/
-poky/   
+poky/

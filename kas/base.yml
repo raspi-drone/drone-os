@@ -24,6 +24,14 @@ repos:
     url: https://github.com/agherzan/meta-raspberrypi
     branch: scarthgap
 
+  meta-ros:
+    url: https://github.com/ros/meta-ros
+    branch: scarthgap
+    layers:
+      meta-ros-common:
+      meta-ros2:
+      meta-ros2-jazzy:
+
   meta-drone:
     path: layers/meta-drone
 

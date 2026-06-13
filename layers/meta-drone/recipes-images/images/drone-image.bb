@@ -8,6 +8,8 @@ IMAGE_INSTALL += " \
     kernel-modules \
     networkmanager \
     modemmanager \
+    libqmi \
+    libmbim \
     wireguard-tools \
     drone-network \
     rclcpp \

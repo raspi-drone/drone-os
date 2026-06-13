@@ -5,8 +5,6 @@ autoconnect=true
 
 [gsm]
 apn=gprs.swisscom.ch
-username=
-password=
 
 [ipv4]
 method=auto

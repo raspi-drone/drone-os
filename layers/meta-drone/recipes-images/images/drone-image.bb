@@ -9,4 +9,5 @@ IMAGE_INSTALL += " \
     networkmanager \
     modemmanager \
     wireguard-tools \
+    drone-network \
 "

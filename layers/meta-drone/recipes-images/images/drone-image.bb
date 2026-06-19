@@ -18,6 +18,7 @@ IMAGE_INSTALL += " \
     drone-network \
     ca-certificates \
     openssl \
+    openssh-sshd \
     curl \
     tzdata \
     chrony \

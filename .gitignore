@@ -6,6 +6,9 @@
 .venv/
 __pycache__/
 
+# Configs
+wg0.nmconnection
+
 # Yocto build artifacts
 build/
 meta-ros/

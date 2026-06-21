@@ -3,10 +3,13 @@
 IFACE="$1"
 STATE="$2"
 
+logger -t wireguard-dispatcher "IFACE=$IFACE STATE=$STATE"
+echo "$(date) IFACE=$1 STATE=$2" >> /tmp/nm-dispatch.log
+
 if [ "$IFACE" = "wwan0" ] && [ "$STATE" = "up" ]; then
-    logger -t wireguard-dispatcher "wwan0 is up, starting WireGuard"
-
-    sleep 5
-
-    nmcli connection up wg0
+    if ! nmcli -t -f GENERAL.STATE device show wg0 2>/dev/null | grep -q "100"; then
+        logger -t wireguard-dispatcher "Starting wg0 in 20s"
+        sleep 20
+        nmcli connection up wg0
+    fi
 fi

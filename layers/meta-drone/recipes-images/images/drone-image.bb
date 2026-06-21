@@ -41,5 +41,10 @@ IMAGE_INSTALL += " \
     ros2action \
     ros2param \
     ros2interface \
+    ros2launch \
+    launch \
+    launch-ros \
+    launch-xml \
     ros-env \
+    drone-foxglove-bridge \
 "

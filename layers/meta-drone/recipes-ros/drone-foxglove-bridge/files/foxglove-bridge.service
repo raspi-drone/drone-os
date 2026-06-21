@@ -1,0 +1,16 @@
+[Unit]
+Description=Foxglove Bridge (ROS2, managed by meta-drone)
+After=network.target
+
+[Service]
+Environment=ROS_DOMAIN_ID=42
+Environment=RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+Environment=ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
+Environment=ROS_LOG_DIR=/tmp/ros-log
+Environment=HOME=/root
+ExecStart=/bin/bash -c "source /etc/profile.d/ros2.sh && exec ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765"
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

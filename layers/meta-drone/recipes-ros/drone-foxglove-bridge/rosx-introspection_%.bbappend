@@ -1,8 +1,9 @@
-# rosx-introspection nutzt CPM.cmake, das sich beim Configure selbst per
-# file(DOWNLOAD) aus dem Internet nachlädt -- das scheitert in der
-# netzwerk-sandboxed do_configure-Task. Datei stattdessen vorab per
-# SRC_URI holen (do_fetch ist erlaubt) und an die von CPM erwartete
-# Stelle legen, damit der Hash-Check greift und der Download übersprungen wird.
+# rosx-introspection uses CPM.cmake, which attempts to download itself
+# from the Internet via file(DOWNLOAD) during configuration. This fails
+# in the network-sandboxed do_configure task. Instead, fetch the file in
+# advance via SRC_URI (do_fetch is allowed) and place it at the location
+# expected by CPM so that the hash check succeeds and the download step
+# is skipped.
 
 CPM_SOURCE_CACHE = "${WORKDIR}/cpm-cache"
 

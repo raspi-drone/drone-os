@@ -1,12 +1,12 @@
-# Upstream meta-ros patch ist stale gegenüber der aktuell gefetchten
-# foxglove_bridge-Source (Hunks 2-7 schlagen fehl).
+# The upstream meta-ros patch is stale relative to the currently fetched
+# foxglove_bridge source (hunks 2–7 fail to apply).
 SRC_URI:remove = "file://disable-compiler-options.patch"
 
-# foxglove_bridge lädt beim Configure per CMake FetchContent ein
-# vorgebautes Foxglove-C++-SDK-Binary von GitHub -- scheitert in der
-# netzwerk-sandboxed do_configure-Task. Stattdessen selbst per SRC_URI
-# holen (BitBake entpackt .zip automatisch in do_unpack) und
-# FetchContent per FETCHCONTENT_SOURCE_DIR auf die lokale Kopie umleiten.
+# foxglove_bridge uses CMake FetchContent during configuration to download
+# a prebuilt Foxglove C++ SDK binary from GitHub, which fails in the
+# network-sandboxed do_configure task. Fetch the SDK via SRC_URI instead
+# (BitBake automatically extracts .zip archives during do_unpack) and
+# redirect FetchContent to the local copy using FETCHCONTENT_SOURCE_DIR.
 
 FOXGLOVE_SDK_VERSION = "0.19.0"
 FOXGLOVE_SDK_PLATFORM = "aarch64-unknown-linux-gnu"
@@ -19,9 +19,9 @@ FOXGLOVE_SDK_EXTRACT_DIR = "${WORKDIR}/foxglove-sdk-extracted/foxglove"
 
 EXTRA_OECMAKE += "-DFETCHCONTENT_SOURCE_DIR_FOXGLOVE_SDK=${FOXGLOVE_SDK_EXTRACT_DIR} -DFETCHCONTENT_FULLY_DISCONNECTED=ON"
 
-# Der entfernte Upstream-Patch hat vermutlich genau das hier erledigt:
-# -Werror eskaliert Warnungen aus fremden, vendorten Headern (z.B.
-# rosx_introspection/contrib/SmallVector.h) zu Hard-Fails. Selbst entfernen.
+# -Werror promotes warnings originating from third-party vendored headers
+# (e.g. rosx_introspection/contrib/SmallVector.h) to hard build failures.
+# Remove it locally.
 do_configure:prepend() {
     sed -i 's/-Werror //g' ${S}/CMakeLists.txt
 }

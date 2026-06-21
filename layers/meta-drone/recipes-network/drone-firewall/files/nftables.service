@@ -1,0 +1,15 @@
+[Unit]
+Description=nftables firewall (managed by meta-drone)
+Documentation=man:nft(8)
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/nft -f /etc/nftables.conf
+ExecReload=/usr/sbin/nft -f /etc/nftables.conf
+ExecStop=/usr/sbin/nft flush ruleset
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

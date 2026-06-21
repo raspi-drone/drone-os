@@ -16,13 +16,14 @@ IMAGE_INSTALL += " \
     libqmi \
     libmbim \
     wireguard-tools \
-    drone-network \
+    nftables \
     ca-certificates \
     openssl \
     openssh-sshd \
     curl \
     tzdata \
     chrony \
+    drone-network \
 "
 
 # ROS2 Jazzy

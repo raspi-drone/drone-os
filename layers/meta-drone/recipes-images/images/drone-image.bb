@@ -23,7 +23,8 @@ IMAGE_INSTALL += " \
     curl \
     tzdata \
     chrony \
-    drone-network \
+    drone-modem \
+    drone-wireguard \
 "
 
 # ROS2 Jazzy

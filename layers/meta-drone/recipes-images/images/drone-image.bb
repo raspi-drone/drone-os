@@ -46,5 +46,6 @@ IMAGE_INSTALL += " \
     launch-ros \
     launch-xml \
     ros-env \
+    drone-dds-config \
     drone-foxglove-bridge \
 "

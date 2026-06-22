@@ -45,7 +45,9 @@ IMAGE_INSTALL += " \
     launch \
     launch-ros \
     launch-xml \
+    diagnostic-msgs \
     ros-env \
     drone-dds-config \
     drone-foxglove-bridge \
+    drone-resource-monitor \
 "

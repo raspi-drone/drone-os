@@ -1,0 +1,19 @@
+[Unit]
+Description=ROS 2 Resource Monitor Node
+After=network.target
+
+[Service]
+Type=simple
+Environment=HOME=/root
+ExecStart=/bin/bash -c '\
+    source /etc/profile.d/ros2.sh && \
+    ros2 launch resource_monitor resource_monitor.launch.py \
+        disk_device:=mmcblk0 \
+        network_interface:=wlan0'
+Restart=on-failure
+RestartSec=5
+SupplementaryGroups=video
+DeviceAllow=/dev/vcio rw
+
+[Install]
+WantedBy=multi-user.target

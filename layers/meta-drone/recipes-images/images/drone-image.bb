@@ -46,8 +46,12 @@ IMAGE_INSTALL += " \
     launch-ros \
     launch-xml \
     diagnostic-msgs \
+    mavros \
+    mavros-extras \
+    mavros-msgs \
     ros-env \
     drone-dds-config \
     drone-foxglove-bridge \
+    drone-mavros \
     drone-resource-monitor \
 "

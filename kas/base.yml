@@ -43,4 +43,6 @@ local_conf_header:
     DISTRO = "drone-os"
     PACKAGE_CLASSES = "package_ipk"
     ENABLE_UART = "1"
+    RPI_EXTRA_CONFIG = "dtoverlay=uart2"
     LICENSE_FLAGS_ACCEPTED:append = " synaptics-killswitch"
+    INHERIT:remove = "create-spdx"

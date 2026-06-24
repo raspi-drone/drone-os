@@ -1,0 +1,7 @@
+bootloader --ptable gpt
+
+part /boot --source bootimg-partition --ondisk mmcblk0 --fstype=vfat --label boot --active --fixed-size 256M
+part / --source rootfs --ondisk mmcblk0 --fstype=ext4 --label rootfs-A --fixed-size 4G
+part --ondisk mmcblk0 --fstype=ext4 --label rootfs-B --fixed-size 4G
+part /config --ondisk mmcblk0 --fstype=ext4 --label config --fixed-size 128M
+part /data --ondisk mmcblk0 --fstype=ext4 --label data --fixed-size 128M

@@ -15,3 +15,11 @@ meta-ros/
 meta-openembedded/
 meta-raspberrypi/
 poky/
+meta-lts-mixins/
+meta-rauc-community/
+meta-rauc/
+
+# Certs
+ca.key.pem
+signing.key.pem*.key.pem
+*.csr.pem

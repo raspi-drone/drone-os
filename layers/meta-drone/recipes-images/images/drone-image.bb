@@ -6,7 +6,8 @@ inherit core-image
 IMAGE_INSTALL += " \
     packagegroup-core-boot \
     kernel-modules \
-    btop \
+    u-boot-fw-utils \
+    u-boot-default-env \
 "
 
 # network
@@ -20,6 +21,7 @@ IMAGE_INSTALL += " \
     ca-certificates \
     openssl \
     openssh-sshd \
+    openssh-sftp-server \
     curl \
     tzdata \
     chrony \
@@ -55,3 +57,11 @@ IMAGE_INSTALL += " \
     drone-mavros \
     drone-resource-monitor \
 "
+
+# Mountpoints for external Partition
+ROOTFS_POSTPROCESS_COMMAND:append = " create_mountpoints;"
+
+create_mountpoints() {
+    mkdir -p ${IMAGE_ROOTFS}/config
+    mkdir -p ${IMAGE_ROOTFS}/data
+}

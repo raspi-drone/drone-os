@@ -1,0 +1,13 @@
+[connection]
+id=drone-modem
+type=gsm
+autoconnect=true
+
+[gsm]
+apn=gprs.swisscom.ch
+
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto

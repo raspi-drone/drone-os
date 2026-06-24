@@ -9,7 +9,7 @@ ExecStart=/bin/bash -c '\
     source /etc/profile.d/ros2.sh && \
     ros2 launch resource_monitor resource_monitor.launch.py \
         disk_device:=mmcblk0 \
-        network_interface:=wlan0'
+        network_interface:=wwan0'
 Restart=on-failure
 RestartSec=5
 SupplementaryGroups=video

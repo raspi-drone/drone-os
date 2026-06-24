@@ -13,4 +13,5 @@ local_conf_header:
         strace \
         tcpdump \
         vim \
+        btop \
     "

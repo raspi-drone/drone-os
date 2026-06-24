@@ -1,0 +1,4 @@
+LABEL=boot      /boot   vfat    defaults,rw         0  2
+/dev/mmcblk0p2  /       ext4    defaults,noatime    0  1
+LABEL=config    /config ext4    defaults,noatime    0  2
+LABEL=data      /data   ext4    defaults,noatime    0  2

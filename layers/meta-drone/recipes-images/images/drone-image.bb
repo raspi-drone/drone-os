@@ -44,6 +44,11 @@ IMAGE_INSTALL += " \
     ros2param \
     ros2interface \
     ros2launch \
+    tf2-geometry-msgs \
+    tf2-geometry-msgs-dev \
+    tf2-eigen \
+    tf2-eigen-dev \
+    tf2-sensor-msgs \
     launch \
     launch-ros \
     launch-xml \

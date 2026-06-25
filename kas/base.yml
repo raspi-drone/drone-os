@@ -1,8 +1,6 @@
 header:
   version: 14
 
-machine: raspberrypi5
-
 repos:
   poky:
     url: https://git.yoctoproject.org/poky

@@ -1,9 +1,6 @@
 header:
   version: 14
 
-  includes:
-    - base.yml
-
 local_conf_header:
   development: |
     EXTRA_IMAGE_FEATURES += "debug-tweaks"

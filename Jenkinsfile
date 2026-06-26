@@ -31,8 +31,7 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
         // Abort if a build is still running when a new one starts for the same branch.
         disableConcurrentBuilds()
-        timestamps()
-        ansiColor('xterm')
+
     }
 
     triggers {

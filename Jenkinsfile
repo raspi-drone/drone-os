@@ -141,19 +141,13 @@ def kasYoctoBuild(String machine, String feature) {
 
     // Inject the shared sstate/download dirs via the kas environment.
     // kas exposes these as top-level env vars that bitbake picks up.
-    withEnv([
-        "SSTATE_DIR=${env.SSTATE_DIR}",
-        "DL_DIR=${env.DL_DIR}",
-    ]) {
-        sh """
-            set -euo pipefail
-            echo "─── kas build: ${machine} / ${feature} ───"
-            kas build \\
-                --env SSTATE_DIR \\
-                --env DL_DIR \\
-                ${kasArgs}
-        """
-    }
+    sh """
+        set -euo pipefail
+        echo "─── kas build: ${machine} / ${feature} ───"
+        export SSTATE_DIR="${env.SSTATE_DIR}"
+        export DL_DIR="${env.DL_DIR}"
+        kas build ${kasArgs}
+    """
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

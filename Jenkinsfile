@@ -7,7 +7,7 @@
 
 // Build matrix: every combination below is built in parallel.
 def MACHINES  = ['rpi5', 'cm5']
-def FEATURES  = ['dev', 'release']
+def FEATURES  = ['dev']
 
 // Shared cache paths (mounted as Docker volumes in docker-compose.yml)
 def SSTATE_DIR    = '/var/cache/yocto/sstate-cache'
@@ -79,8 +79,11 @@ pipeline {
 
                             parallelStages[label] = {
                                 stage("Build ${label}") {
-                                    kasYoctoBuild(m, f)
-                                    archiveDeployImages(m, f, ARTEFACT_GLOBS, ARTEFACTS_DIR)
+                                    ws("/var/jenkins_home/workspace/${env.JOB_NAME}-${label}") {
+                                        checkout scm
+                                        kasYoctoBuild(m, f)
+                                        archiveDeployImages(m, f, ARTEFACT_GLOBS, ARTEFACTS_DIR)
+                                    }
                                 }
                             }
                         }

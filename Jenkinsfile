@@ -79,7 +79,7 @@ pipeline {
 
                             parallelStages[label] = {
                                 stage("Build ${label}") {
-                                    ws("/var/jenkins_home/workspace/${env.JOB_NAME}-${label}") {
+                                    ws("/var/jenkins_home/workspace/drone-os-${env.SAFE_BRANCH}-${label}") {
                                         checkout scm
                                         kasYoctoBuild(m, f)
                                         archiveDeployImages(m, f, ARTEFACT_GLOBS, ARTEFACTS_DIR)

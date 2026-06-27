@@ -103,7 +103,7 @@ pipeline {
         }
         cleanup {
             sh 'git-crypt lock 2>/dev/null || true'
-            sh 'rm -rf build/tmp'
+            sh 'rm -rf build-rpi5/tmp build-cm5/tmp'
         }
     }
 }
@@ -120,12 +120,13 @@ def kasYoctoBuild(String machine, String feature, String sstateDir, String dlDir
         echo "─── kas build: ${machine} / ${feature} ───"
         export SSTATE_DIR="${sstateDir}"
         export DL_DIR="${dlDir}"
+        export KAS_BUILD_DIR="build-${machine}"
         kas build ${kasArgs}
     """
 }
 
 def archiveDeployImages(String machine, String feature, List globs, String artefactsDir) {
-    def deployDir = "build/tmp/deploy/images/drone-${machine}"
+    def deployDir = "build-${machine}/tmp/deploy/images/drone-${machine}"
     def destDir   = "${artefactsDir}/${env.SAFE_BRANCH}/${machine}-${feature}"
 
     sh """

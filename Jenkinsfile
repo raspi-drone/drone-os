@@ -31,7 +31,6 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
         // Abort if a build is still running when a new one starts for the same branch.
         disableConcurrentBuilds()
-
     }
 
     triggers {
@@ -81,6 +80,9 @@ pipeline {
                                 stage("Build ${label}") {
                                     ws("/var/jenkins_home/workspace/drone-os-${env.SAFE_BRANCH}-${label}") {
                                         checkout scm
+                                        // Unlock must happen per workspace – each parallel
+                                        // checkout produces a fresh encrypted working tree.
+                                        gitCryptUnlock()
                                         kasYoctoBuild(m, f)
                                         archiveDeployImages(m, f, ARTEFACT_GLOBS, ARTEFACTS_DIR)
                                     }
@@ -125,10 +127,33 @@ pipeline {
             //           message: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
         }
         cleanup {
+            // Lock again before cleanup – suppress errors in case the workspace
+            // was already wiped or git-crypt was never unlocked (e.g. early failure).
+            sh 'git-crypt lock 2>/dev/null || true'
             // Remove the Yocto build directory after archiving to reclaim disk.
             // Comment this out if you want to keep the build tree for debugging.
             sh 'rm -rf build/tmp'
         }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Helper: unlock git-crypt in the current workspace
+//
+//  The key is stored in Jenkins Credentials as a "Secret file" with the ID
+//  'gitcrypt-key'.  Add it under:
+//    Manage Jenkins → Credentials → Global → Add Credential
+//      Kind : Secret file
+//      ID   : gitcrypt-key
+//      File : <your exported git-crypt key>
+// ─────────────────────────────────────────────────────────────────────────────
+def gitCryptUnlock() {
+    withCredentials([file(credentialsId: 'gitcrypt-key', variable: 'GITCRYPT_KEY')]) {
+        sh '''
+            set -euo pipefail
+            echo "─── git-crypt unlock ───"
+            git-crypt unlock "$GITCRYPT_KEY"
+        '''
     }
 }
 

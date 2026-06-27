@@ -55,24 +55,16 @@ pipeline {
         stage('Build matrix') {
             steps {
                 script {
-                    def parallelStages = [:]
-
                     for (machine in MACHINES) {
                         for (feature in FEATURES) {
                             def m = machine
                             def f = feature
-                            def label = "${m}-${f}"
-
-                            parallelStages[label] = {
-                                stage("Build ${label}") {
-                                    kasYoctoBuild(m, f, SSTATE_DIR, DL_DIR)
-                                    archiveDeployImages(m, f, ARTEFACT_GLOBS, ARTEFACTS_DIR)
-                                }
+                            stage("Build ${m}-${f}") {
+                                kasYoctoBuild(m, f, SSTATE_DIR, DL_DIR)
+                                archiveDeployImages(m, f, ARTEFACT_GLOBS, ARTEFACTS_DIR)
                             }
                         }
                     }
-
-                    parallel parallelStages
                 }
             }
         }

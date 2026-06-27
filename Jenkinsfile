@@ -146,7 +146,7 @@ def kasYoctoBuild(String machine, String feature) {
         # kas container mode runs the build inside an Ubuntu 22.04 container,
         # bypassing the host compiler entirely. This avoids the
         # Debian Trixie / GCC 14 incompatibility with Yocto Scarthgap.
-        kas build --container ${kasArgs}
+        kas-container build ${kasArgs}
     """
 }
 

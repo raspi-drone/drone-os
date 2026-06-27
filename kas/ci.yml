@@ -11,4 +11,7 @@ local_conf_header:
     SOURCE_DATE_EPOCH = "0"
 
   ci_compiler_workaround: |
-    CXXFLAGS:append:pn-spirv-tools-native = " -Wno-array-bounds"
+      CXXFLAGS:append:pn-spirv-tools-native = " -Wno-array-bounds"
+      CXXFLAGS:append:pn-spirv-tools = " -Wno-array-bounds"
+      OECMAKE_C_FLAGS:append:pn-spirv-tools-native = " -Wno-array-bounds"
+      OECMAKE_CXX_FLAGS:append:pn-spirv-tools-native = " -Wno-array-bounds"

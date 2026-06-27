@@ -1,27 +1,14 @@
 # kas/ci.yml
-# ─────────────────────────────────────────────────────────────────────────────
-#  CI overlay – include this file last on the kas command line so it can
-#  override sstate/download dirs without touching the base configs:
-#
-#    kas build kas/base.yml:kas/machine/rpi5.yml:kas/features/dev.yml:kas/ci.yml
-#
-#  In the Jenkinsfile the env vars SSTATE_DIR / DL_DIR are set from the
-#  Docker volume mounts, so this file just wires them through to bitbake.
-# ─────────────────────────────────────────────────────────────────────────────
-
 header:
   version: 14
 
 local_conf_header:
   ci_caches: |
-    # Shared state and download caches – set via Jenkins env vars
     SSTATE_DIR   ?= "${SSTATE_DIR}"
     DL_DIR       ?= "${DL_DIR}"
-
-    # Parallelism – kas/bitbake auto-detect, but these caps prevent OOM on
-    # shared hosts.  Tune to your build machine's CPU/RAM.
     BB_NUMBER_THREADS ?= "8"
     PARALLEL_MAKE     ?= "-j8"
-
-    # Reproducible timestamps in build logs
     SOURCE_DATE_EPOCH = "0"
+
+  ci_compiler_workaround: |
+    CXXFLAGS:append:pn-spirv-tools-native = " -Wno-array-bounds"

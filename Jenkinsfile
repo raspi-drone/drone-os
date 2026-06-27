@@ -31,6 +31,7 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
         // Abort if a build is still running when a new one starts for the same branch.
         disableConcurrentBuilds()
+
     }
 
     triggers {
@@ -80,9 +81,6 @@ pipeline {
                                 stage("Build ${label}") {
                                     ws("/var/jenkins_home/workspace/drone-os-${env.SAFE_BRANCH}-${label}") {
                                         checkout scm
-                                        // Unlock must happen per workspace – each parallel
-                                        // checkout produces a fresh encrypted working tree.
-                                        gitCryptUnlock()
                                         kasYoctoBuild(m, f)
                                         archiveDeployImages(m, f, ARTEFACT_GLOBS, ARTEFACTS_DIR)
                                     }
@@ -121,39 +119,12 @@ pipeline {
         }
         failure {
             echo "❌ Build failed for branch ${env.BRANCH_NAME}"
-            // Uncomment and configure to send Slack notifications:
-            // slackSend channel: '#drone-os-ci',
-            //           color: 'danger',
-            //           message: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
         }
         cleanup {
-            // Lock again before cleanup – suppress errors in case the workspace
-            // was already wiped or git-crypt was never unlocked (e.g. early failure).
-            sh 'git-crypt lock 2>/dev/null || true'
             // Remove the Yocto build directory after archiving to reclaim disk.
             // Comment this out if you want to keep the build tree for debugging.
             sh 'rm -rf build/tmp'
         }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-//  Helper: unlock git-crypt in the current workspace
-//
-//  The key is stored in Jenkins Credentials as a "Secret file" with the ID
-//  'gitcrypt-key'.  Add it under:
-//    Manage Jenkins → Credentials → Global → Add Credential
-//      Kind : Secret file
-//      ID   : gitcrypt-key
-//      File : <your exported git-crypt key>
-// ─────────────────────────────────────────────────────────────────────────────
-def gitCryptUnlock() {
-    withCredentials([file(credentialsId: 'gitcrypt-key', variable: 'GITCRYPT_KEY')]) {
-        sh '''
-            set -euo pipefail
-            echo "─── git-crypt unlock ───"
-            git-crypt unlock "$GITCRYPT_KEY"
-        '''
     }
 }
 
@@ -167,14 +138,15 @@ def kasYoctoBuild(String machine, String feature) {
         "kas/features/${feature}.yml",
     ].join(':')
 
-    // Inject the shared sstate/download dirs via the kas environment.
-    // kas exposes these as top-level env vars that bitbake picks up.
     sh """
         set -euo pipefail
         echo "─── kas build: ${machine} / ${feature} ───"
         export SSTATE_DIR="${env.SSTATE_DIR}"
         export DL_DIR="${env.DL_DIR}"
-        kas build ${kasArgs}
+        # kas container mode runs the build inside an Ubuntu 22.04 container,
+        # bypassing the host compiler entirely. This avoids the
+        # Debian Trixie / GCC 14 incompatibility with Yocto Scarthgap.
+        kas build --container ${kasArgs}
     """
 }
 

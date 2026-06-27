@@ -143,9 +143,10 @@ def kasYoctoBuild(String machine, String feature) {
         echo "─── kas build: ${machine} / ${feature} ───"
         export SSTATE_DIR="${env.SSTATE_DIR}"
         export DL_DIR="${env.DL_DIR}"
-        # kas container mode runs the build inside an Ubuntu 22.04 container,
-        # bypassing the host compiler entirely. This avoids the
-        # Debian Trixie / GCC 14 incompatibility with Yocto Scarthgap.
+        # Use host Podman via its socket. kas-container detects DOCKER_HOST
+        # and uses it as the container runtime, bypassing rootless UID mapping.
+        export DOCKER_HOST=unix:///run/podman/podman.sock
+        export KAS_CONTAINER_ENGINE=docker
         kas-container build ${kasArgs}
     """
 }

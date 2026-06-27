@@ -1,20 +1,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 //  Drone OS – Yocto Multibranch Pipeline
-//
-//  Triggered automatically for every branch in the GitHub repo.
-//  Builds all machine × feature combinations and archives the deploy images.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Build matrix: every combination below is built in parallel.
 def MACHINES  = ['rpi5', 'cm5']
 def FEATURES  = ['dev']
 
-// Shared cache paths (mounted as Docker volumes in docker-compose.yml)
 def SSTATE_DIR    = '/var/cache/yocto/sstate-cache'
 def DL_DIR        = '/var/cache/yocto/downloads'
-def ARTEFACTS_DIR = '/var/lib/jenkins/artefacts'
+def ARTEFACTS_DIR = '/var/jenkins_home/artefacts'
 
-// Artefact globs relative to build/tmp/deploy/images/<machine>/
 def ARTEFACT_GLOBS = [
     '*.rootfs.wic.bz2',
     '*.raucb',
@@ -22,49 +16,42 @@ def ARTEFACT_GLOBS = [
 
 pipeline {
 
-    // Run on any available agent (the Jenkins controller itself when using the
-    // single-container setup from docker-compose.yml).
     agent any
 
     options {
-        // Keep the last 10 builds per branch to save disk space.
         buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '5'))
-        // Abort if a build is still running when a new one starts for the same branch.
         disableConcurrentBuilds()
-
     }
 
     triggers {
-        // Poll GitHub every 5 minutes.  Replace with a webhook for instant triggers:
-        // In GitHub → repo Settings → Webhooks → add http://<jenkins>/github-webhook/
-        // and install the GitHub plugin, then replace pollSCM with:
-        //   githubPush()
         pollSCM('H/5 * * * *')
     }
 
     environment {
-        // kas reads KAS_BUILD_SYSTEM_ARGS for extra bitbake settings.
         KAS_BUILD_SYSTEM_ARGS = "--force-checkout"
-        // Point kas / bitbake at the shared caches.
         SSTATE_DIR  = "${SSTATE_DIR}"
         DL_DIR      = "${DL_DIR}"
     }
 
     stages {
 
-        // ── 1. Checkout ──────────────────────────────────────────────────────
         stage('Checkout') {
             steps {
                 checkout scm
                 script {
-                    // Make branch name safe for artefact paths (replace / with -)
                     env.SAFE_BRANCH = env.BRANCH_NAME.replaceAll('/', '-')
                     echo "Building branch: ${env.BRANCH_NAME}  (${env.SAFE_BRANCH})"
+                }
+                withCredentials([file(credentialsId: 'gitcrypt-key', variable: 'GITCRYPT_KEY')]) {
+                    sh '''
+                        set -euo pipefail
+                        echo "─── git-crypt unlock ───"
+                        git-crypt unlock "$GITCRYPT_KEY"
+                    '''
                 }
             }
         }
 
-        // ── 2. Matrix build ──────────────────────────────────────────────────
         stage('Build matrix') {
             steps {
                 script {
@@ -72,18 +59,14 @@ pipeline {
 
                     for (machine in MACHINES) {
                         for (feature in FEATURES) {
-                            // Capture loop variables for closure
                             def m = machine
                             def f = feature
                             def label = "${m}-${f}"
 
                             parallelStages[label] = {
                                 stage("Build ${label}") {
-                                    ws("/var/lib/jenkins/workspace/drone-os-${env.SAFE_BRANCH}-${label}") {
-                                        checkout scm
-                                        kasYoctoBuild(m, f)
-                                        archiveDeployImages(m, f, ARTEFACT_GLOBS, ARTEFACTS_DIR)
-                                    }
+                                    kasYoctoBuild(m, f, SSTATE_DIR, DL_DIR)
+                                    archiveDeployImages(m, f, ARTEFACT_GLOBS, ARTEFACTS_DIR)
                                 }
                             }
                         }
@@ -94,13 +77,11 @@ pipeline {
             }
         }
 
-        // ── 3. Publish artefact index ─────────────────────────────────────────
         stage('Publish index') {
             steps {
                 script {
                     writeArtefactIndex(MACHINES, FEATURES, ARTEFACTS_DIR)
                 }
-                // Serve the HTML index via the Jenkins HTML Publisher plugin.
                 publishHTML(target: [
                     allowMissing         : false,
                     alwaysLinkToLastBuild: true,
@@ -121,17 +102,13 @@ pipeline {
             echo "❌ Build failed for branch ${env.BRANCH_NAME}"
         }
         cleanup {
-            // Remove the Yocto build directory after archiving to reclaim disk.
-            // Comment this out if you want to keep the build tree for debugging.
+            sh 'git-crypt lock 2>/dev/null || true'
             sh 'rm -rf build/tmp'
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Helper: run kas build for one machine × feature combination
-// ─────────────────────────────────────────────────────────────────────────────
-def kasYoctoBuild(String machine, String feature) {
+def kasYoctoBuild(String machine, String feature, String sstateDir, String dlDir) {
     def kasArgs = [
         "kas/base.yml",
         "kas/machine/${machine}.yml",
@@ -141,17 +118,13 @@ def kasYoctoBuild(String machine, String feature) {
     sh """
         set -euo pipefail
         echo "─── kas build: ${machine} / ${feature} ───"
-        export SSTATE_DIR="${env.SSTATE_DIR}"
-        export DL_DIR="${env.DL_DIR}"
+        export SSTATE_DIR="${sstateDir}"
+        export DL_DIR="${dlDir}"
         kas build ${kasArgs}
     """
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Helper: copy deploy images to artefact volume and archive in Jenkins
-// ─────────────────────────────────────────────────────────────────────────────
 def archiveDeployImages(String machine, String feature, List globs, String artefactsDir) {
-    // Machine names in the deploy dir use the full distro prefix, e.g. drone-rpi5
     def deployDir = "build/tmp/deploy/images/drone-${machine}"
     def destDir   = "${artefactsDir}/${env.SAFE_BRANCH}/${machine}-${feature}"
 
@@ -161,7 +134,6 @@ def archiveDeployImages(String machine, String feature, List globs, String artef
         mkdir -p "${destDir}"
         cd "${deployDir}"
         for pattern in ${globs.join(' ')}; do
-            # nullglob-style: skip silently if pattern matches nothing
             for f in \$pattern; do
                 [ -e "\$f" ] || continue
                 cp -v "\$f" "${destDir}/"
@@ -169,7 +141,6 @@ def archiveDeployImages(String machine, String feature, List globs, String artef
         done
     """
 
-    // Also archive inside Jenkins so artefacts are accessible from the build page.
     archiveArtifacts(
         artifacts         : "${deployDir}/*.rootfs.wic.bz2,${deployDir}/*.raucb",
         allowEmptyArchive : true,
@@ -177,9 +148,6 @@ def archiveDeployImages(String machine, String feature, List globs, String artef
     )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  Helper: write a simple HTML index of available artefacts
-// ─────────────────────────────────────────────────────────────────────────────
 def writeArtefactIndex(List machines, List features, String artefactsDir) {
     def rows = new StringBuilder()
 

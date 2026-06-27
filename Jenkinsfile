@@ -95,7 +95,8 @@ pipeline {
         }
         cleanup {
             sh 'git-crypt lock 2>/dev/null || true'
-            sh 'rm -rf build-rpi5/tmp build-cm5/tmp'
+            // Disabled for debugging – re-enable once builds are stable
+            // sh 'rm -rf build-rpi5/tmp build-cm5/tmp'
         }
     }
 }

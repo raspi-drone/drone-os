@@ -12,7 +12,7 @@ def FEATURES  = ['dev']
 // Shared cache paths (mounted as Docker volumes in docker-compose.yml)
 def SSTATE_DIR    = '/var/cache/yocto/sstate-cache'
 def DL_DIR        = '/var/cache/yocto/downloads'
-def ARTEFACTS_DIR = '/var/jenkins_home/artefacts'
+def ARTEFACTS_DIR = '/var/lib/jenkins/artefacts'
 
 // Artefact globs relative to build/tmp/deploy/images/<machine>/
 def ARTEFACT_GLOBS = [
@@ -79,7 +79,7 @@ pipeline {
 
                             parallelStages[label] = {
                                 stage("Build ${label}") {
-                                    ws("/var/jenkins_home/workspace/drone-os-${env.SAFE_BRANCH}-${label}") {
+                                    ws("/var/lib/jenkins/workspace/drone-os-${env.SAFE_BRANCH}-${label}") {
                                         checkout scm
                                         kasYoctoBuild(m, f)
                                         archiveDeployImages(m, f, ARTEFACT_GLOBS, ARTEFACTS_DIR)
@@ -143,7 +143,7 @@ def kasYoctoBuild(String machine, String feature) {
         echo "─── kas build: ${machine} / ${feature} ───"
         export SSTATE_DIR="${env.SSTATE_DIR}"
         export DL_DIR="${env.DL_DIR}"
-        kas-container build ${kasArgs}
+        kas build ${kasArgs}
     """
 }
 

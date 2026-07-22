@@ -58,10 +58,14 @@ apn=<YOUR_APN>
 
 [ipv4]
 method=auto
+route-metric=100
 
 [ipv6]
 method=auto
+route-metric=100
 ```
+
+`route-metric=100` makes the modem the preferred default route whenever it is available. [drone-wifi](../drone-wifi/README.md) installs a WiFi connection with `route-metric=700` as a lower-priority fallback for when the modem has no connectivity (no SIM, no coverage, or hardware not connected).
 
 ### Parameter Description
 

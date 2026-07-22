@@ -9,9 +9,10 @@ SRC_URI += " \
 
 S = "${WORKDIR}"
 
-# Soft dependency: the dispatcher reacts to the modem interface (wwan0)
-# coming up, but doesn't hard-fail if drone-modem isn't installed.
-RRECOMMENDS:${PN} += "drone-modem"
+# Soft dependency: the dispatcher reacts to the modem (wwan0) or WiFi
+# (wlan0) interface coming up, but doesn't hard-fail if drone-modem /
+# drone-wifi aren't installed.
+RRECOMMENDS:${PN} += "drone-modem drone-wifi"
 
 do_install() {
     # WireGuard connection

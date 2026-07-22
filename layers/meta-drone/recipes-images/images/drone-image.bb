@@ -26,6 +26,7 @@ IMAGE_INSTALL += " \
     tzdata \
     chrony \
     drone-modem \
+    drone-wifi \
     drone-wireguard \
 "
 

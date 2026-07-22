@@ -5,6 +5,7 @@ This directory contains all networking-related Yocto recipes used by the drone p
 The recipes provide:
 
 * Cellular modem connectivity
+* WiFi connectivity as a fallback data path
 * WireGuard VPN access
 * Host firewall configuration
 
@@ -16,13 +17,15 @@ Together, these components establish a secure networking stack that allows remot
 recipes-network/
 ├── drone-firewall/
 ├── drone-modem/
+├── drone-wifi/
 └── drone-wireguard/
 ```
 
 | Recipe            | Purpose                                                                  |
 | ----------------- | ------------------------------------------------------------------------ |
 | `drone-modem`     | Configures cellular connectivity through ModemManager and NetworkManager |
-| `drone-wireguard` | Establishes a WireGuard VPN connection once the modem is online          |
+| `drone-wifi`      | Configures a low-priority WiFi fallback connection for when 5G is unavailable |
+| `drone-wireguard` | Establishes a WireGuard VPN connection once either uplink is online      |
 | `drone-firewall`  | Restricts network access to approved services over the VPN               |
 
 ## Network Architecture
@@ -30,37 +33,40 @@ recipes-network/
 The networking stack is designed around the following flow:
 
 ```text
-+-------------------+
-| Cellular Network  |
-+---------+---------+
-          |
-          v
-+-------------------+
-| drone-modem       |
-| (wwan0)           |
-+---------+---------+
-          |
-          v
-+-------------------+
-| drone-wireguard   |
-| (wg0)             |
-+---------+---------+
-          |
-          v
-+-------------------+
-| drone-firewall    |
-+---------+---------+
-          |
-          v
-+-------------------+
-| ROS2 Services     |
-| Foxglove          |
-| SSH               |
-+-------------------+
++-------------------+     +-------------------+
+| Cellular Network  |     | WiFi Network      |
++---------+---------+     +---------+---------+
+          |                         |
+          v                         v
++-------------------+     +-------------------+
+| drone-modem       |     | drone-wifi        |
+| (wwan0)           |     | (wlan0)           |
+| route-metric 100  |     | route-metric 700  |
++---------+---------+     +---------+---------+
+          |     preferred           | fallback
+          +------------+------------+
+                       |
+                       v
+             +-------------------+
+             | drone-wireguard   |
+             | (wg0)             |
+             +---------+---------+
+                       |
+                       v
+             +-------------------+
+             | drone-firewall    |
+             +---------+---------+
+                       |
+                       v
+             +-------------------+
+             | ROS2 Services     |
+             | Foxglove          |
+             | SSH               |
+             +-------------------+
 ```
 
-1. The cellular modem establishes Internet connectivity.
-2. WireGuard creates a secure VPN tunnel.
+1. The cellular modem and WiFi both attempt to establish Internet connectivity; the modem's lower `route-metric` makes it the preferred default route whenever it is available, with WiFi used only when the modem has no route (no SIM, no coverage, or hardware not connected).
+2. WireGuard creates a secure VPN tunnel on top of whichever uplink currently has the default route.
 3. The firewall permits access only through the VPN.
 4. Application services become reachable through the secured network.
 
@@ -82,6 +88,22 @@ Primary interface:
 wwan0
 ```
 
+### drone-wifi
+
+Provides a low-priority WiFi fallback connection.
+
+Responsibilities:
+
+* Configure a WiFi connection profile for NetworkManager.
+* Enable automatic WiFi connection on boot.
+* Stay subordinate to the modem via a higher `route-metric`, so it only carries traffic when the modem is unavailable.
+
+Primary interface:
+
+```text
+wlan0
+```
+
 ### drone-wireguard
 
 Provides secure remote connectivity.
@@ -89,7 +111,7 @@ Provides secure remote connectivity.
 Responsibilities:
 
 * Install a WireGuard NetworkManager connection.
-* Wait for the modem connection to become available.
+* Wait for the modem or WiFi connection to become available.
 * Automatically establish the VPN tunnel.
 
 Primary interface:
@@ -98,7 +120,7 @@ Primary interface:
 wg0
 ```
 
-The VPN tunnel is intentionally started only after cellular connectivity has been established.
+The VPN tunnel is intentionally started only after an uplink (cellular or WiFi) connectivity has been established.
 
 ### drone-firewall
 
@@ -124,16 +146,18 @@ ModemManager
 NetworkManager
       │
       ▼
-wwan0 connected
-      │
-      ▼
-WireGuard dispatcher
-      │
-      ▼
-wg0 connected
-      │
-      ▼
-Remote access available
+wwan0 connected ──────┐  (falls back to)
+      │                wlan0 connected
+      ▼                     │
+      └───────┬─────────────┘
+              ▼
+      WireGuard dispatcher
+              │
+              ▼
+      wg0 connected
+              │
+              ▼
+    Remote access available
 ```
 
 Firewall rules are already active during this process.
@@ -183,6 +207,7 @@ Typical image configuration:
 ```bitbake
 IMAGE_INSTALL:append = " \
     drone-modem \
+    drone-wifi \
     drone-wireguard \
     nftables \
 "
@@ -205,6 +230,15 @@ Expected:
 ```text
 drone-modem
 ```
+
+### WiFi Fallback
+
+```bash
+nmcli connection show --active
+ip route show default
+```
+
+`drone-wifi` should be active whenever WiFi is in range, but the default route (lowest `metric`) should point at `wwan0` unless the modem is unavailable.
 
 ### WireGuard
 
@@ -246,6 +280,18 @@ Check:
 mmcli -L
 journalctl -u ModemManager
 ```
+
+### WiFi Is Used Instead Of 5G
+
+Check the route metrics — the modem's route must have a lower `metric` than WiFi's:
+
+```bash
+ip route show default
+nmcli -f GENERAL.STATE,IP4.ROUTE device show wwan0
+nmcli -f GENERAL.STATE,IP4.ROUTE device show wlan0
+```
+
+Confirm `mm-apn.nmconnection` has `route-metric=100` and `wifi.nmconnection` has `route-metric=700`.
 
 ### WireGuard Does Not Start
 

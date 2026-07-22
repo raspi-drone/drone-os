@@ -8,6 +8,8 @@ apn=gprs.swisscom.ch
 
 [ipv4]
 method=auto
+route-metric=100
 
 [ipv6]
 method=auto
+route-metric=100

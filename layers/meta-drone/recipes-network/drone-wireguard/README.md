@@ -1,6 +1,6 @@
 # Drone Wireguard
 
-This Yocto recipe installs a predefined WireGuard connection for NetworkManager and a dispatcher script that automatically brings up the VPN once the cellular modem interface (`wwan0`) becomes available.
+This Yocto recipe installs a predefined WireGuard connection for NetworkManager and a dispatcher script that automatically brings up the VPN once an uplink interface — the cellular modem (`wwan0`) or WiFi (`wlan0`) — becomes available.
 
 ## Overview
 
@@ -27,9 +27,9 @@ The dispatcher script is installed to:
 /etc/NetworkManager/dispatcher.d/90-wireguard
 ```
 
-When NetworkManager reports that interface `wwan0` is in state `up`, the script:
+When NetworkManager reports that interface `wwan0` or `wlan0` is in state `up`, the script:
 
-1. Waits 20 seconds to allow the cellular connection to stabilize.
+1. Waits 20 seconds to allow the underlying connection to stabilize.
 2. Checks whether `wg0` is already active.
 3. Starts the WireGuard connection if necessary.
 
@@ -108,9 +108,10 @@ The package recommends:
 
 ```text
 drone-modem
+drone-wifi
 ```
 
-This is a soft dependency because the dispatcher reacts to the modem interface (`wwan0`) becoming available, but the package itself can be installed independently.
+These are soft dependencies because the dispatcher reacts to the modem (`wwan0`) or WiFi (`wlan0`) interface becoming available, but the package itself can be installed independently. See [drone-wifi](../drone-wifi/README.md) for how the two uplinks are prioritized (5G preferred, WiFi as fallback) — WireGuard comes up on top of whichever one is active.
 
 ## Directory Structure
 

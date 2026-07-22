@@ -1,4 +1,5 @@
 # .gitattributes
+layers/meta-drone/recipes-network/drone-wifi/files/wifi.nmconnection      filter=git-crypt diff=git-crypt
 layers/meta-drone/recipes-network/drone-wireguard/files/wg0.nmconnection  filter=git-crypt diff=git-crypt
 layers/meta-drone/recipes-core/bundles/files/wireguard/wg0.nmconnection   filter=git-crypt diff=git-crypt
 layers/meta-drone/recipes-core/rauc/files/ca.key.pem                      filter=git-crypt diff=git-crypt

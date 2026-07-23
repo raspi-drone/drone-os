@@ -8,7 +8,7 @@ Environment=HOME=/root
 ExecStart=/bin/bash -c '\
     source /etc/profile.d/ros2.sh && \
     ros2 launch drone_mavros mavros.launch.py'
-Restart=on-failure
+Restart=always
 RestartSec=5
 
 [Install]
